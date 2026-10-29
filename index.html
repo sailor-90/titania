@@ -84,8 +84,10 @@ iframe.on{display:block}
   // iOS aplikasi layar utama: innerHeight/100vh bisa lebih pendek dari layar fisik (pita di bawah), jadi pakai tinggi layar.
   function fit() {
     var h = window.innerHeight;
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
-    if (standalone) {
+    // Android: screen.height termasuk tombol navigasi bawaan, jadi tetap pakai innerHeight.
+    if (ios && standalone) {
       var portrait = window.innerHeight >= window.innerWidth;
       var full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
       if (full > h) h = full;
