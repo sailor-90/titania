@@ -14,7 +14,7 @@
 <style>
 :root{--bg:#08142e;--txt:#f2f6fb;--sub:#cfe6f2;--glass:rgba(255,255,255,.14);--glass2:rgba(255,255,255,.22);--edge:rgba(255,255,255,.22)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg)}
+html{background:#ff00ff}
 html,body{margin:0;height:100%;color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;left:0;top:0;right:0;height:100vh;z-index:-1;background:radial-gradient(120% 90% at 50% 20%,#1a4fb8 0%,#0e2f6e 45%,#08142e 100%)}
 #menu{min-height:100%;max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 26px) 18px calc(env(safe-area-inset-bottom) + 28px)}
@@ -149,6 +149,12 @@ iframe.on{display:block}
   if (h) { history.replaceState(null, "", location.pathname); }
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
 })();
+</script>
+<div id="dbg" style="position:fixed;left:8px;top:200px;z-index:99;background:#000c;color:#0f0;font:12px/1.4 monospace;padding:6px;border-radius:6px"></div>
+<script>
+(function(){var d=document.getElementById("dbg");var p=document.createElement("div");p.style.cssText="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom);visibility:hidden";document.body.appendChild(p);
+function u(){d.textContent="v8-diag inner "+innerWidth+"x"+innerHeight+" | screen "+screen.width+"x"+screen.height+" | vh "+document.getElementById("menu").getBoundingClientRect().height+" | safeB "+p.getBoundingClientRect().height+" | docH "+document.documentElement.clientHeight}
+u();setInterval(u,1000)})();
 </script>
 </body>
 </html>

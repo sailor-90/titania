@@ -1,5 +1,5 @@
 // Hanya menyimpan kerangka TITANIA (menu). Aplikasi di dalamnya punya service worker sendiri.
-var CACHE = "titania-v7";
+var CACHE = "titania-v8";
 var SHELL = ["./", "index.html", "apps.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", function (e) {
@@ -13,7 +13,7 @@ self.addEventListener("activate", function (e) {
 // Jaringan dulu, cadangan dari cache bila offline.
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET" || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(fetch(e.request).then(function (r) {
+  e.respondWith(fetch(e.request, { cache: "no-cache" }).then(function (r) {
     var copy = r.clone();
     caches.open(CACHE).then(function (c) { c.put(e.request, copy); });
     return r;
