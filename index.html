@@ -34,15 +34,13 @@ h1{margin:14px 0 26px;font-size:44px;font-weight:700;letter-spacing:-.5px;line-h
 .card.wide{grid-column:1/-1;min-height:104px;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
 .card.wide .tx{flex:1}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-#viewer{display:none;position:fixed;inset:0;background:#070f1a;flex-direction:column}
-#bar{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 6px) 10px 8px;background:rgba(10,20,34,.85);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--edge)}
-#bar button{display:flex;align-items:center;justify-content:center;gap:4px;background:var(--glass);color:var(--txt);border:1px solid var(--edge);border-radius:12px;height:38px;min-width:38px;padding:0 12px;font:inherit;font-size:14px;font-weight:500}
-#bar button:active{background:var(--glass2)}
-#bar svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-#title{flex:1;text-align:center;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#frames{flex:1;position:relative;background:#fff}
+#viewer{display:none;position:fixed;inset:0;background:#fff}
+#frames{position:absolute;inset:0;background:#fff}
 iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:none}
 iframe.on{display:block}
+#fab{position:fixed;z-index:10;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(8,20,46,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.3);opacity:.7;touch-action:none;user-select:none;-webkit-user-select:none;padding:0}
+#fab:active{opacity:1}
+#fab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 </style>
 </head>
 <body>
@@ -52,12 +50,8 @@ iframe.on{display:block}
   <div class="grid" id="grid"></div>
 </main>
 <section id="viewer" aria-label="Aplikasi">
-  <div id="bar">
-    <button id="back" aria-label="Kembali ke menu"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Menu</button>
-    <div id="title"></div>
-    <button id="reload" aria-label="Muat ulang aplikasi"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
-  </div>
   <div id="frames"></div>
+  <button id="fab" aria-label="Kembali ke menu"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button>
 </section>
 <script src="apps.js"></script>
 <script>
@@ -77,7 +71,7 @@ iframe.on{display:block}
   window.addEventListener("online", net); window.addEventListener("offline", net); net();
   var menu = document.getElementById("menu"), viewer = document.getElementById("viewer");
   var grid = document.getElementById("grid"), frames = document.getElementById("frames");
-  var title = document.getElementById("title"), current = null;
+  var current = null, fab = document.getElementById("fab");
 
   TITANIA_APPS.forEach(function (a, i) {
     var b = document.createElement("button");
@@ -107,7 +101,7 @@ iframe.on{display:block}
     current = a;
     Array.prototype.forEach.call(frames.children, function (f) { f.classList.remove("on"); });
     frameOf(a).classList.add("on");
-    title.textContent = a.name;
+    placeFab();
     menu.style.display = "none"; viewer.style.display = "flex";
     if (push) history.pushState({ app: id }, "", "#" + id);
   }
@@ -115,14 +109,38 @@ iframe.on{display:block}
     current = null;
     viewer.style.display = "none"; menu.style.display = "block";
   }
-  document.getElementById("back").addEventListener("click", function () {
-    if (history.state && history.state.app) history.back(); else show();
+  function goBack() { if (history.state && history.state.app) history.back(); else show(); }
+  function clampFab(x, y) {
+    return { x: Math.max(6, Math.min(window.innerWidth - 48, x)), y: Math.max(6, Math.min(window.innerHeight - 48, y)) };
+  }
+  function placeFab() {
+    var p = null;
+    try { p = JSON.parse(localStorage.getItem("fabPos")); } catch (e) {}
+    p = clampFab(p ? p.x * window.innerWidth : window.innerWidth - 52, p ? p.y * window.innerHeight : window.innerHeight * 0.42);
+    fab.style.left = p.x + "px"; fab.style.top = p.y + "px";
+  }
+  var drag = null;
+  fab.addEventListener("pointerdown", function (e) {
+    drag = { sx: e.clientX, sy: e.clientY, ox: fab.offsetLeft, oy: fab.offsetTop, moved: false };
+    try { fab.setPointerCapture(e.pointerId); } catch (err) {}
   });
-  document.getElementById("reload").addEventListener("click", function () {
-    if (!current) return;
-    var f = document.getElementById("f-" + current.id);
-    if (f) f.src = current.url;
+  fab.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    var dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+    if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 8) return;
+    drag.moved = true;
+    var p = clampFab(drag.ox + dx, drag.oy + dy);
+    fab.style.left = p.x + "px"; fab.style.top = p.y + "px";
   });
+  fab.addEventListener("pointerup", function () {
+    if (!drag) return;
+    var moved = drag.moved; drag = null;
+    if (moved) {
+      try { localStorage.setItem("fabPos", JSON.stringify({ x: fab.offsetLeft / window.innerWidth, y: fab.offsetTop / window.innerHeight })); } catch (e) {}
+    } else goBack();
+  });
+  fab.addEventListener("pointercancel", function () { drag = null; });
+  window.addEventListener("resize", function () { if (current) placeFab(); });
   window.addEventListener("popstate", function () {
     var id = (history.state && history.state.app) || "";
     if (id) open(id, false); else show();
