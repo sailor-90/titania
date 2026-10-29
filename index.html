@@ -14,10 +14,10 @@
 <style>
 :root{--bg:#08142e;--txt:#f2f6fb;--sub:#cfe6f2;--glass:rgba(255,255,255,.14);--glass2:rgba(255,255,255,.22);--edge:rgba(255,255,255,.22)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg)}
-html,body{margin:0;height:100%;color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;left:0;top:0;right:0;height:var(--vh,100vh);z-index:-1;background:radial-gradient(120% 90% at 50% 20%,#1a4fb8 0%,#0e2f6e 45%,#08142e 100%)}
-#menu{min-height:100%;max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 26px) 18px calc(env(safe-area-inset-bottom) + 28px)}
+html{background:radial-gradient(120% 90% at 50% 20%,#1a4fb8 0%,#0e2f6e 45%,#08142e 100%) no-repeat;background-size:100% var(--vh,100%);background-color:#08142e}
+html,body{margin:0;height:var(--vh,100%);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{position:relative;overflow:hidden}
+#menu{position:absolute;left:0;top:0;right:0;height:var(--vh,100%);overflow-y:auto;-webkit-overflow-scrolling:touch;max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 26px) 18px calc(env(safe-area-inset-bottom) + 28px)}
 .top{display:flex;align-items:center;justify-content:space-between}
 .ship{font-size:12px;letter-spacing:2px;color:var(--sub);text-transform:uppercase}
 .pill{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);background:var(--glass);border:1px solid var(--edge);border-radius:99px;padding:5px 10px}
@@ -34,7 +34,7 @@ h1{margin:14px 0 26px;font-size:44px;font-weight:700;letter-spacing:-.5px;line-h
 .card.wide{grid-column:1/-1;min-height:104px;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
 .card.wide .tx{flex:1}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-#viewer{display:none;position:fixed;left:0;top:0;right:0;height:var(--vh,100vh);background:#fff}
+#viewer{display:none;position:absolute;left:0;top:0;right:0;height:var(--vh,100%);background:#fff}
 #frames{position:absolute;inset:0;background:#fff}
 iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:none}
 iframe.on{display:block}
@@ -82,6 +82,21 @@ iframe.on{display:block}
     return h;
   }
   fit();
+  var root = document.documentElement;
+  function syncBg() {
+    if (!current) return;
+    try {
+      var f = document.getElementById("f-" + current.id), d = f.contentDocument, w = d.defaultView;
+      var el = d.elementFromPoint(Math.floor(f.clientWidth / 2), f.clientHeight - 2), col = "";
+      while (el && !col) {
+        var c = w.getComputedStyle(el).backgroundColor;
+        if (c && c !== "transparent" && c !== "rgba(0, 0, 0, 0)") col = c;
+        el = el.parentElement;
+      }
+      root.style.background = col || "#fff";
+    } catch (e) { root.style.background = "#fff"; }
+  }
+  setInterval(syncBg, 700);
   window.addEventListener("resize", fit); window.addEventListener("orientationchange", function () { setTimeout(fit, 150); });
   var menu = document.getElementById("menu"), viewer = document.getElementById("viewer");
   var grid = document.getElementById("grid"), frames = document.getElementById("frames");
@@ -116,21 +131,21 @@ iframe.on{display:block}
     Array.prototype.forEach.call(frames.children, function (f) { f.classList.remove("on"); });
     frameOf(a).classList.add("on");
     placeFab();
-    menu.style.display = "none"; viewer.style.display = "flex";
+    menu.style.display = "none"; viewer.style.display = "flex"; root.style.background = "#fff";
     if (push) history.pushState({ app: id }, "", "#" + id);
   }
   function show() {
     current = null;
-    viewer.style.display = "none"; menu.style.display = "block";
+    viewer.style.display = "none"; menu.style.display = "block"; root.style.background = "";
   }
   function goBack() { if (history.state && history.state.app) history.back(); else show(); }
   function clampFab(x, y) {
-    return { x: Math.max(6, Math.min(window.innerWidth - 48, x)), y: Math.max(6, Math.min(fit() - 48, y)) };
+    return { x: Math.max(6, Math.min(window.innerWidth - 48, x)), y: Math.max(6, Math.min(window.innerHeight - 48, y)) };
   }
   function placeFab() {
     var p = null;
     try { p = JSON.parse(localStorage.getItem("fabPos")); } catch (e) {}
-    p = clampFab(p ? p.x * window.innerWidth : window.innerWidth - 52, p ? p.y * fit() : fit() * 0.42);
+    p = clampFab(p ? p.x * window.innerWidth : window.innerWidth - 52, p ? p.y * window.innerHeight : window.innerHeight * 0.42);
     fab.style.left = p.x + "px"; fab.style.top = p.y + "px";
   }
   var drag = null;
@@ -150,7 +165,7 @@ iframe.on{display:block}
     if (!drag) return;
     var moved = drag.moved; drag = null;
     if (moved) {
-      try { localStorage.setItem("fabPos", JSON.stringify({ x: fab.offsetLeft / window.innerWidth, y: fab.offsetTop / fit() })); } catch (e) {}
+      try { localStorage.setItem("fabPos", JSON.stringify({ x: fab.offsetLeft / window.innerWidth, y: fab.offsetTop / window.innerHeight })); } catch (e) {}
     } else goBack();
   });
   fab.addEventListener("pointercancel", function () { drag = null; });
