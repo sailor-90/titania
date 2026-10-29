@@ -174,7 +174,7 @@ iframe.on{display:block}
     p = clampFab(p ? p.x * window.innerWidth : window.innerWidth - 52, p ? p.y * window.innerHeight : window.innerHeight * 0.42);
     fab.style.left = p.x + "px"; fab.style.top = p.y + "px";
   }
-  var drag = null;
+  var drag = null, dragged = false;
   fab.addEventListener("pointerdown", function (e) {
     drag = { sx: e.clientX, sy: e.clientY, ox: fab.offsetLeft, oy: fab.offsetTop, moved: false };
     try { fab.setPointerCapture(e.pointerId); } catch (err) {}
@@ -191,10 +191,13 @@ iframe.on{display:block}
     if (!drag) return;
     var moved = drag.moved; drag = null;
     if (moved) {
+      dragged = true; setTimeout(function () { dragged = false; }, 400);
       try { localStorage.setItem("fabPos", JSON.stringify({ x: fab.offsetLeft / window.innerWidth, y: fab.offsetTop / window.innerHeight })); } catch (e) {}
-    } else goBack();
+    }
   });
   fab.addEventListener("pointercancel", function () { drag = null; });
+  // Ketukan lewat "click" (andal di Android); pointerup/pointercancel saja bisa hilang di Android.
+  fab.addEventListener("click", function () { if (!dragged) goBack(); });
   window.addEventListener("resize", function () { if (current) placeFab(); });
   window.addEventListener("popstate", function () {
     if (leaving) { leaving = false; return; }
