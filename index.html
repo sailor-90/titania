@@ -40,6 +40,14 @@ iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff
 iframe.on{display:block}
 #fab{position:fixed;z-index:10;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(8,20,46,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.35);box-shadow:0 4px 14px rgba(0,0,0,.3);opacity:.7;touch-action:none;user-select:none;-webkit-user-select:none;padding:0}
 #fab:active{opacity:1}
+#ask{display:none;position:absolute;left:0;top:0;right:0;height:var(--vh,100%);z-index:30;background:rgba(3,10,24,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px}
+#ask .box{width:100%;max-width:320px;background:#fff;color:#0f1b2d;border-radius:20px;padding:22px 20px 16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+#ask h2{margin:0 0 6px;font-size:18px;font-weight:600}
+#ask p{margin:0 0 18px;font-size:14px;line-height:1.4;color:#5b6b80}
+#ask .row{display:flex;gap:10px}
+#ask button{flex:1;height:46px;border-radius:13px;font:inherit;font-size:16px;font-weight:600;border:0;cursor:pointer}
+#ask .no{background:#e8eef7;color:#0f1b2d}
+#ask .yes{background:#1668e3;color:#fff}
 #fab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 </style>
 </head>
@@ -52,6 +60,10 @@ iframe.on{display:block}
 <section id="viewer" aria-label="Aplikasi">
   <div id="frames"></div>
   <button id="fab" aria-label="Kembali ke menu"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg></button>
+  <div id="ask" role="dialog" aria-modal="true" aria-labelledby="askT">
+    <div class="box"><h2 id="askT">Kembali ke menu?</h2><p>Pekerjaan yang belum disimpan di aplikasi ini bisa hilang.</p>
+      <div class="row"><button class="no" id="askNo" type="button">Tidak</button><button class="yes" id="askYes" type="button">Ya</button></div></div>
+  </div>
 </section>
 <script src="apps.js"></script>
 <script>
@@ -109,7 +121,7 @@ iframe.on{display:block}
     b.style.cssText = "--c1:" + c[0] + ";--c2:" + c[1] + ";animation-delay:" + (i * 70) + "ms";
     b.innerHTML = '<div class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[a.icon] || "") + '</svg></div><svg class="go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><div class="tx"><b></b></div>';
     b.querySelector("b").textContent = a.name;
-    b.addEventListener("click", function () { open(a.id, true); });
+    b.addEventListener("click", function () { open(a.id); });
     grid.appendChild(b);
   });
 
@@ -124,7 +136,10 @@ iframe.on{display:block}
     }
     return f;
   }
-  function open(id, push) {
+  var guarded = false, leaving = false;
+  // Satu entri riwayat penjaga: gestur back/geser dari tepi di dalam aplikasi diserap, tidak keluar dari aplikasi.
+  function guardOn() { if (!guarded) { history.pushState({ guard: 1 }, ""); guarded = true; } }
+  function open(id) {
     var a = TITANIA_APPS.filter(function (x) { return x.id === id; })[0];
     if (!a) return show();
     current = a;
@@ -132,13 +147,22 @@ iframe.on{display:block}
     frameOf(a).classList.add("on");
     placeFab();
     menu.style.display = "none"; viewer.style.display = "flex"; root.style.background = "#fff";
-    if (push) history.pushState({ app: id }, "", "#" + id);
+    guardOn();
   }
   function show() {
-    current = null;
+    current = null; ask.style.display = "none";
     viewer.style.display = "none"; menu.style.display = "block"; root.style.background = "";
   }
-  function goBack() { if (history.state && history.state.app) history.back(); else show(); }
+  var ask = document.getElementById("ask");
+  function askOpen() { ask.style.display = "flex"; }
+  function askClose() { ask.style.display = "none"; }
+  function goBack() { askOpen(); }
+  document.getElementById("askNo").addEventListener("click", askClose);
+  document.getElementById("askYes").addEventListener("click", function () {
+    askClose(); show();
+    if (guarded) { guarded = false; leaving = true; history.back(); }
+  });
+  ask.addEventListener("click", function (e) { if (e.target === ask) askClose(); });
   function clampFab(x, y) {
     return { x: Math.max(6, Math.min(window.innerWidth - 48, x)), y: Math.max(6, Math.min(window.innerHeight - 48, y)) };
   }
@@ -171,11 +195,10 @@ iframe.on{display:block}
   fab.addEventListener("pointercancel", function () { drag = null; });
   window.addEventListener("resize", function () { if (current) placeFab(); });
   window.addEventListener("popstate", function () {
-    var id = (history.state && history.state.app) || "";
-    if (id) open(id, false); else show();
+    if (leaving) { leaving = false; return; }
+    if (current) { history.pushState({ guard: 1 }, ""); guarded = true; }
   });
-  var h = location.hash.replace("#", "");
-  if (h) { history.replaceState(null, "", location.pathname); }
+  if (location.hash) history.replaceState(null, "", location.pathname);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
 })();
 </script>
