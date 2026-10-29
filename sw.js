@@ -1,5 +1,5 @@
 // Hanya menyimpan kerangka TITANIA (menu). Aplikasi di dalamnya punya service worker sendiri.
-var CACHE = "titania-v8";
+var CACHE = "titania-v9";
 var SHELL = ["./", "index.html", "apps.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 
 self.addEventListener("install", function (e) {

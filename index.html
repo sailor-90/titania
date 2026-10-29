@@ -14,9 +14,9 @@
 <style>
 :root{--bg:#08142e;--txt:#f2f6fb;--sub:#cfe6f2;--glass:rgba(255,255,255,.14);--glass2:rgba(255,255,255,.22);--edge:rgba(255,255,255,.22)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:#ff00ff}
+html{background:var(--bg)}
 html,body{margin:0;height:100%;color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;left:0;top:0;right:0;height:100vh;z-index:-1;background:radial-gradient(120% 90% at 50% 20%,#1a4fb8 0%,#0e2f6e 45%,#08142e 100%)}
+body::before{content:"";position:fixed;left:0;top:0;right:0;height:var(--vh,100vh);z-index:-1;background:radial-gradient(120% 90% at 50% 20%,#1a4fb8 0%,#0e2f6e 45%,#08142e 100%)}
 #menu{min-height:100%;max-width:640px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 26px) 18px calc(env(safe-area-inset-bottom) + 28px)}
 .top{display:flex;align-items:center;justify-content:space-between}
 .ship{font-size:12px;letter-spacing:2px;color:var(--sub);text-transform:uppercase}
@@ -34,7 +34,7 @@ h1{margin:14px 0 26px;font-size:44px;font-weight:700;letter-spacing:-.5px;line-h
 .card.wide{grid-column:1/-1;min-height:104px;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
 .card.wide .tx{flex:1}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-#viewer{display:none;position:fixed;left:0;top:0;right:0;height:100vh;background:#fff}
+#viewer{display:none;position:fixed;left:0;top:0;right:0;height:var(--vh,100vh);background:#fff}
 #frames{position:absolute;inset:0;background:#fff}
 iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;display:none}
 iframe.on{display:block}
@@ -69,6 +69,20 @@ iframe.on{display:block}
     p.className = "pill" + (on ? "" : " off"); document.getElementById("nettxt").textContent = on ? "Online" : "Offline";
   }
   window.addEventListener("online", net); window.addEventListener("offline", net); net();
+  // iOS aplikasi layar utama: innerHeight/100vh bisa lebih pendek dari layar fisik (pita di bawah), jadi pakai tinggi layar.
+  function fit() {
+    var h = window.innerHeight;
+    var standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+    if (standalone) {
+      var portrait = window.innerHeight >= window.innerWidth;
+      var full = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
+      if (full > h) h = full;
+    }
+    document.documentElement.style.setProperty("--vh", h + "px");
+    return h;
+  }
+  fit();
+  window.addEventListener("resize", fit); window.addEventListener("orientationchange", function () { setTimeout(fit, 150); });
   var menu = document.getElementById("menu"), viewer = document.getElementById("viewer");
   var grid = document.getElementById("grid"), frames = document.getElementById("frames");
   var current = null, fab = document.getElementById("fab");
@@ -111,12 +125,12 @@ iframe.on{display:block}
   }
   function goBack() { if (history.state && history.state.app) history.back(); else show(); }
   function clampFab(x, y) {
-    return { x: Math.max(6, Math.min(window.innerWidth - 48, x)), y: Math.max(6, Math.min(window.innerHeight - 48, y)) };
+    return { x: Math.max(6, Math.min(window.innerWidth - 48, x)), y: Math.max(6, Math.min(fit() - 48, y)) };
   }
   function placeFab() {
     var p = null;
     try { p = JSON.parse(localStorage.getItem("fabPos")); } catch (e) {}
-    p = clampFab(p ? p.x * window.innerWidth : window.innerWidth - 52, p ? p.y * window.innerHeight : window.innerHeight * 0.42);
+    p = clampFab(p ? p.x * window.innerWidth : window.innerWidth - 52, p ? p.y * fit() : fit() * 0.42);
     fab.style.left = p.x + "px"; fab.style.top = p.y + "px";
   }
   var drag = null;
@@ -136,7 +150,7 @@ iframe.on{display:block}
     if (!drag) return;
     var moved = drag.moved; drag = null;
     if (moved) {
-      try { localStorage.setItem("fabPos", JSON.stringify({ x: fab.offsetLeft / window.innerWidth, y: fab.offsetTop / window.innerHeight })); } catch (e) {}
+      try { localStorage.setItem("fabPos", JSON.stringify({ x: fab.offsetLeft / window.innerWidth, y: fab.offsetTop / fit() })); } catch (e) {}
     } else goBack();
   });
   fab.addEventListener("pointercancel", function () { drag = null; });
@@ -149,12 +163,6 @@ iframe.on{display:block}
   if (h) { history.replaceState(null, "", location.pathname); }
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
 })();
-</script>
-<div id="dbg" style="position:fixed;left:8px;top:200px;z-index:99;background:#000c;color:#0f0;font:12px/1.4 monospace;padding:6px;border-radius:6px"></div>
-<script>
-(function(){var d=document.getElementById("dbg");var p=document.createElement("div");p.style.cssText="position:fixed;bottom:0;left:0;right:0;height:env(safe-area-inset-bottom);visibility:hidden";document.body.appendChild(p);
-function u(){d.textContent="v8-diag inner "+innerWidth+"x"+innerHeight+" | screen "+screen.width+"x"+screen.height+" | vh "+document.getElementById("menu").getBoundingClientRect().height+" | safeB "+p.getBoundingClientRect().height+" | docH "+document.documentElement.clientHeight}
-u();setInterval(u,1000)})();
 </script>
 </body>
 </html>
