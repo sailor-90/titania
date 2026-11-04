@@ -73,9 +73,10 @@ iframe.on{display:block}
     route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/>',
     compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
     report: '<path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/>',
-    pin: '<path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>'
+    pin: '<path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM8 13h8"/>'
   };
-  var COLORS = { scale: ["#38bdf8", "#2563eb"], route: ["#a78bfa", "#6366f1"], compass: ["#34d399", "#0d9488"], report: ["#fbbf24", "#f97316"], pin: ["#fb7185", "#e11d48"] };
+  var COLORS = { scale: ["#38bdf8", "#2563eb"], route: ["#a78bfa", "#6366f1"], compass: ["#34d399", "#0d9488"], report: ["#fbbf24", "#f97316"], pin: ["#fb7185", "#e11d48"], folder: ["#2dd4bf", "#16a34a"] };
   function net() {
     var on = navigator.onLine, p = document.getElementById("net");
     p.className = "pill" + (on ? "" : " off"); document.getElementById("nettxt").textContent = on ? "Online" : "Offline";
