@@ -4,6 +4,7 @@ var TITANIA_APPS = [
   { id: "passage-plan", name: "Passage Plan", desc: "Rencana pelayaran", icon: "route", url: "https://sailor-90.github.io/singapore-passage-plan/" },
   { id: "compass-error", name: "Compass Error", desc: "Salah kompas", icon: "compass", url: "https://sailor-90.github.io/compass-error/" },
   { id: "weekly-report", name: "Weekly Report", desc: "Laporan mingguan", icon: "report", url: "https://sailor-90.github.io/fieldlog/" },
-  { id: "pmn", name: "PMN", desc: "Notice pelabuhan", icon: "pin", url: "https://sailor-90.github.io/pmn-plotter-app/" }
+  { id: "pmn", name: "PMN", desc: "Notice pelabuhan", icon: "pin", url: "https://sailor-90.github.io/pmn-plotter-app/" },
+  { id: "dokumen", name: "Dokumen Kapal", desc: "Crew list, muster, sertifikat", icon: "folder", url: "https://sailor-90.github.io/fieldlog/?mod=docs" }
 ];
 if (typeof module !== "undefined") module.exports = TITANIA_APPS;
